@@ -1,11 +1,11 @@
 export class UnavailableGuildCache {
     #items: Set<bigint> = new Set()
 
-    insert(id: bigint) {
-        this.#items.add(id)
+    insert(key: bigint) {
+        this.#items.add(key)
     }
 
-    remove(id: bigint) {
-        this.#items.delete(id)
+    remove(key: bigint) {
+        this.#items.delete(key)
     }
 }

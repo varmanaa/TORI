@@ -1,9 +1,6 @@
-import {
-    APIChannel,
-    APIGuildChannelResolvable,
-    ChannelType
-} from '@discordjs/core'
+import type { APIGuildChannel } from '#types/cache'
+import type { APIChannel } from '@discordjs/core'
 
-export function isGuildChannel(channel: APIChannel): channel is APIGuildChannelResolvable {
-    return ![ChannelType.DM, ChannelType.GroupDM].includes(channel.type)
+export function isGuildChannel(channel: APIChannel): channel is APIGuildChannel & { guild_id: string } {
+    return Reflect.has(channel, 'guild_id')
 }

@@ -1,9 +1,15 @@
-import { GuildCache } from './GuildCache.js'
-import { UnavailableGuildCache } from './UnavailableGuildCache.js'
-import { UserCache } from './UserCache.js'
+import {
+    ChannelCache,
+    GuildCache,
+    RoleCache,
+    UnavailableGuildCache,
+    UserCache
+} from '#structs'
 
 export class Cache {
-    guilds = new GuildCache()
+    channels = new ChannelCache(this)
+    guilds = new GuildCache(this)
+    roles = new RoleCache(this)
     unavailableGuilds = new UnavailableGuildCache()
     users = new UserCache()
 }

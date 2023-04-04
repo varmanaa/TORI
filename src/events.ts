@@ -9,136 +9,72 @@ export async function handleEvents(client: ToriClient) {
 
         if (!isGuildChannel(channel))
             return
-        if (!channel?.guild_id)
-            return
-        
-        const guild = client.cache.guilds.get(BigInt(channel.guild_id))
 
-        if (guild)
-            guild.channels.insert(channel)
+        client.cache.channels.insert(channel)
     })
-    client.on(GatewayDispatchEvents.ChannelDelete, payload => {
-        const channel = payload.data
-
-        if (!isGuildChannel(channel))
-            return
-        if (!channel?.guild_id)
-            return
-        
-        const guild = client.cache.guilds.get(BigInt(channel.guild_id))
-
-        if (guild)
-            guild.channels.remove(BigInt(channel.id))
-    })
+    client.on(GatewayDispatchEvents.ChannelDelete, payload => client.cache.channels.remove(BigInt(payload.data.id)))
     client.on(GatewayDispatchEvents.ChannelUpdate, payload => {
         const channel = payload.data
 
         if (!isGuildChannel(channel))
             return
-        if (!channel?.guild_id)
-            return
-        
-        const guild = client.cache.guilds.get(BigInt(channel.guild_id))
 
-        if (guild)
-            guild.channels.insert(channel)
+        client.cache.channels.insert(channel)
     })
     client.on(GatewayDispatchEvents.GuildCreate, async payload => {
-        const guildId = BigInt(payload.data.id)
+        const guild = payload.data
+        const guildId = BigInt(guild.id)
+        const games = await client.database.getGuildGames(guildId)
+        const tags = await client.database.getGuildTags(guildId)
 
-        client.cache.guilds.insert(guildId, payload.data.name)
-        client.cache.unavailableGuilds.remove(guildId)
-
-        const guild = client.cache.guilds.get(guildId)
-
-        for (const channel of payload.data.channels) {
-            if (!isGuildChannel(channel))
-                continue
-
-            guild.channels.insert(channel)
-        }
-
-        for (const { d, t } of await client.database.getGuildGames(guildId))
-            guild.games.set(`${ d } (${ t })`, `${ d }_${ t.toUpperCase() }`)
-
-        for (const member of payload.data.members) {
-            guild.members.insert(member)
-            client.cache.users.insert(member.user)
-        }
-
-        for (const role of payload.data.roles)
-            guild.roles.insert(role)
-
-        for (const tag of await client.database.getGuildTags(guildId))
-            guild.tags.insert(tag)
+        client.cache.guilds.insert(
+            guild.channels,
+            games,
+            guildId,
+            guild.members,
+            guild.name,
+            guild.roles,
+            tags
+        )
     })
-    client.on(GatewayDispatchEvents.GuildDelete, payload => {
-        const guildId = BigInt(payload.data.id)
-
-        client.cache.guilds.remove(guildId)
-
-        if (payload.data.unavailable)
-            client.cache.unavailableGuilds.insert(guildId)
-    })
+    client.on(GatewayDispatchEvents.GuildDelete, payload => client.cache.guilds.remove(BigInt(payload.data.id), payload.data.unavailable))
     client.on(GatewayDispatchEvents.GuildMemberAdd, payload => {
-        const guildId = BigInt(payload.data.guild_id)
+        const member = payload.data
+        const guildId = BigInt(member.guild_id)
         const guild = client.cache.guilds.get(guildId)
 
-        guild.members.insert(payload.data)
-        client.cache.users.insert(payload.data.user)
+        if (guild)
+            guild.members.insert(member)
     })
     client.on(GatewayDispatchEvents.GuildMemberRemove, payload => {
+        const userId = BigInt(payload.data.user.id)
         const guildId = BigInt(payload.data.guild_id)
         const guild = client.cache.guilds.get(guildId)
-        const userId = BigInt(payload.data.user.id)
 
-        guild.members.remove(userId)
-        client.cache.users.remove(userId)
+        if (guild)
+            guild.members.remove(userId)
     })
     client.on(GatewayDispatchEvents.GuildMemberUpdate, payload => {
-        const guildId = BigInt(payload.data.guild_id)
+        const member = payload.data
+        const guildId = BigInt(member.guild_id)
         const guild = client.cache.guilds.get(guildId)
 
-        guild.members.insert(payload.data)
-        client.cache.users.insert(payload.data.user)
+        if (guild)
+            guild.members.update(member)
     })
     client.on(GatewayDispatchEvents.GuildMembersChunk, payload => {
         const guildId = BigInt(payload.data.guild_id)
         const guild = client.cache.guilds.get(guildId)
 
-        for (const member of payload.data.members) {
-            guild.members.insert(member)
-            client.cache.users.insert(member.user)
+        if (guild) {
+            for (const member of payload.data.members)
+                guild.members.insert({ ...member, guild_id: payload.data.guild_id })
         }
     })
-    client.on(GatewayDispatchEvents.GuildRoleCreate, payload => {
-        const guildId = BigInt(payload.data.guild_id)
-        const guild = client.cache.guilds.get(guildId)
-
-        guild.roles.insert(payload.data.role)
-    })
-    client.on(GatewayDispatchEvents.GuildRoleDelete, payload => {
-        const guildId = BigInt(payload.data.guild_id)
-        const guild = client.cache.guilds.get(guildId)
-        const roleId = BigInt(payload.data.role_id)
-
-        guild.roles.remove(roleId)
-    })
-    client.on(GatewayDispatchEvents.GuildRoleUpdate, payload => {
-        const guildId = BigInt(payload.data.guild_id)
-        const guild = client.cache.guilds.get(guildId)
-
-        guild.roles.insert(payload.data.role)
-    })
-    client.on(GatewayDispatchEvents.GuildUpdate, payload => {
-        const guildId = BigInt(payload.data.id)
-        const guild = client.cache.guilds.get(guildId)
-
-        client.cache.guilds.update(guildId, payload.data.name)
-
-        for (const role of payload.data.roles)
-            guild.roles.insert(role)
-    })
+    client.on(GatewayDispatchEvents.GuildRoleCreate, payload => client.cache.roles.insert(BigInt(payload.data.guild_id), payload.data.role))
+    client.on(GatewayDispatchEvents.GuildRoleDelete, payload => client.cache.roles.remove(BigInt(payload.data.role_id)))
+    client.on(GatewayDispatchEvents.GuildRoleUpdate, payload => client.cache.roles.insert(BigInt(payload.data.guild_id), payload.data.role))
+    client.on(GatewayDispatchEvents.GuildUpdate, payload => client.cache.guilds.update(BigInt(payload.data.id), payload.data.name))
     client.on(GatewayDispatchEvents.InteractionCreate, payload => { return -1 })
     client.on(GatewayDispatchEvents.Ready, payload => {
         const { user } = payload.data
