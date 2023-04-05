@@ -1,6 +1,5 @@
+import { Cache, Database } from '#structs'
 import { BOT_TOKEN } from '#utility'
-import { Cache } from './cache/index.js'
-import { Database } from './database.js'
 import { Client, GatewayIntentBits } from '@discordjs/core'
 import { REST } from '@discordjs/rest'
 import { WebSocketManager } from '@discordjs/ws'
