@@ -8,8 +8,8 @@ import type {
     APIApplicationCommandInteractionDataIntegerOption,
     APIApplicationCommandInteractionDataNumberOption,
     APIApplicationCommandInteractionDataStringOption,
-    APIApplicationCommandOptionChoice,
-    RESTPostAPIApplicationCommandsJSONBody
+    RESTPostAPIApplicationCommandsJSONBody,
+    RESTPostAPIBaseApplicationCommandsJSONBody
 } from '@discordjs/core'
 
 export type AutocompleteFocusedOption = 
@@ -18,14 +18,14 @@ export type AutocompleteFocusedOption =
     | APIApplicationCommandInteractionDataStringOption
     
 export interface AutocompleteInteraction {
-    getChoices(interaction: ApplicationCommandAutocompleteInteraction, client?: ToriClient): APIApplicationCommandOptionChoice[]
+    getChoices(interaction: ApplicationCommandAutocompleteInteraction, client: ToriClient): APIApplicationCommandOptionChoice<string | number>[]
 }
 
 export interface CommandInteraction {
-    getCommand(): RESTPostAPIApplicationCommandsJSONBody
-    run(interaction: ApplicationCommandInteraction, client?: ToriClient): void
+    getCommand(): RESTPostAPIApplicationCommandsJSONBody | RESTPostAPIBaseApplicationCommandsJSONBody
+    run(interaction: ApplicationCommandInteraction, client: ToriClient): void
 }
 
 export interface ModalInteraction {
-    handle(interaction: ModalSubmitInteraction, client?: ToriClient): void
+    handle(interaction: ModalSubmitInteraction, client: ToriClient): void
 }

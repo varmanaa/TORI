@@ -3,6 +3,10 @@ import type { Tag } from '@prisma/client'
 export class TagCache {
     #items: Map<string, bigint> = new Map()
 
+    entries() {
+        return this.#items.entries()
+    }
+
     get(key: string): bigint | null {
         return this.#items.get(key) ?? null
     }

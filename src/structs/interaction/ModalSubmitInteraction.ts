@@ -1,7 +1,7 @@
 import {
     type APIInteractionResponseCallbackData,
     type APIModalSubmission,
-    type APIModalSubmitInteraction,
+    type APIModalSubmitGuildInteraction,
     InteractionResponseType,
     Routes
 } from '@discordjs/core'
@@ -9,14 +9,16 @@ import type { REST } from '@discordjs/rest'
 
 export class ModalSubmitInteraction {
     protected readonly applicationId: string
-    protected readonly data: APIModalSubmission
+    readonly data: APIModalSubmission
+    readonly guildId: bigint
     protected readonly id: string
     protected readonly rest: REST
     protected readonly token: string
 
-    constructor(rest: REST, interaction: APIModalSubmitInteraction ) {
+    constructor(rest: REST, interaction: APIModalSubmitGuildInteraction ) {
         this.applicationId = interaction.application_id
         this.data = interaction.data
+        this.guildId = BigInt(interaction.guild_id)
         this.id = interaction.id
         this.rest = rest
         this.token = interaction.token

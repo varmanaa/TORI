@@ -46,8 +46,8 @@ export async function handleEvents(client: ToriClient) {
     client.on(GatewayDispatchEvents.GuildCreate, async payload => {
         const guild = payload.data
         const guildId = BigInt(guild.id)
-        const games = await client.database.getGuildGames(guildId)
-        const tags = await client.database.getGuildTags(guildId)
+        const games = await client.database.readGuildGames(guildId)
+        const tags = await client.database.readGuildTags(guildId)
 
         client.cache.guilds.insert(
             guild.channels,

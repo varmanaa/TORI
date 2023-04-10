@@ -1,27 +1,29 @@
 import {
     type APIApplicationCommandInteractionDataOption,
-    type APIChatInputApplicationCommandInteraction,
+    type APIChatInputApplicationCommandGuildInteraction,
     type APIInteractionDataResolved,
     type APIInteractionResponseCallbackData,
     type APIMessage,
     type APIModalInteractionResponseCallbackData,
     ApplicationCommandOptionType,
     InteractionResponseType,
-    Routes
+    Routes,
 } from '@discordjs/core'
 import type { REST } from '@discordjs/rest'
 
 export class ApplicationCommandInteraction {
     protected readonly applicationId: string
+    readonly guildId: bigint
     readonly id: string
     protected readonly options: APIApplicationCommandInteractionDataOption[]
     protected readonly resolved: APIInteractionDataResolved
     protected readonly rest: REST
-    protected readonly subcommand: string | null
+    readonly subcommand: string | null
     protected readonly token: string
 
-    constructor(rest: REST, interaction: APIChatInputApplicationCommandInteraction ) {
+    constructor(rest: REST, interaction: APIChatInputApplicationCommandGuildInteraction ) {
         this.applicationId = interaction.application_id
+        this.guildId = BigInt(interaction.guild_id)
         this.id = interaction.id
         this.options = interaction.data.options
         this.resolved = interaction.data.resolved
@@ -45,6 +47,14 @@ export class ApplicationCommandInteraction {
                 }
             }
         )
+    }
+
+    getStringOption(name: string): string {
+        const foundOption = this.options.find(option => option.name === name)
+
+        return foundOption && 'value' in foundOption
+            ? foundOption.value.toString()
+            : null
     }
 
     async reply({ ...data }: Pick<APIInteractionResponseCallbackData, 'content' | 'components' | 'embeds' | 'flags'> = {}) {
