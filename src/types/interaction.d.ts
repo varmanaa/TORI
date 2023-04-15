@@ -29,3 +29,15 @@ export interface CommandInteraction {
 export interface ModalInteraction {
     handle(interaction: ModalSubmitInteraction, client: ToriClient): void
 }
+
+export const enum GameBit {
+    Online = 1 << 0,
+    Peel = 1 << 1,
+    Toronto = 1 << 2,
+    Unknown = 1 << 3,
+    Waterloo = 1 << 4,
+    York = 1 << 5,
+    Potluck = 1 << 6,
+    Space = 1 << 7,
+    IsEastOnly = 1 << 8
+}

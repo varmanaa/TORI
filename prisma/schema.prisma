@@ -10,7 +10,7 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-enum GameType {
+enum GameLocation {
     ONLINE   @map("ONLINE")
     PEEL     @map("PEEL")
     TORONTO  @map("TORONTO")
@@ -19,20 +19,28 @@ enum GameType {
     YORK     @map("YORK")
 }
 
+enum GameType {
+    POTLUCK @map("POTLUCK")
+    SPACE   @map("SPACE")
+}
+
 model Game {
-    id               BigInt    @id @default(autoincrement())
-    guildId          BigInt    @map("guild_id")
-    type             GameType
-    playerOneId      String    @map("player_one_id")
-    playerTwoId      String    @map("player_two_id")
-    playerThreeId    String    @map("player_three_id")
-    playerFourId     String    @map("player_four_id")
-    playerOneScore   Int       @map("player_one_score")
-    playerTwoScore   Int       @map("player_two_score")
-    playerThreeScore Int       @map("player_three_score")
-    playerFourScore  Int       @map("player_four_score")
-    createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
-    updatedAt        DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+    id               BigInt       @id @default(autoincrement())
+    guildId          BigInt       @map("guild_id")
+    location         GameLocation
+    playerOneId      String       @map("player_one_id")
+    playerTwoId      String       @map("player_two_id")
+    playerThreeId    String       @map("player_three_id")
+    playerFourId     String?      @map("player_four_id")
+    playerOneScore   Int          @map("player_one_score")
+    playerTwoScore   Int          @map("player_two_score")
+    playerThreeScore Int          @map("player_three_score")
+    playerFourScore  Int?         @map("player_four_score")
+    type             GameType?
+    isEastOnly       Boolean      @default(false) @map("is_east_only")
+    notes            String?      @map("notes")
+    createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt        DateTime?    @updatedAt @map("updated_at") @db.Timestamptz()
 
     @@map("game")
 }

@@ -31,12 +31,18 @@ export const TagDeleteCommand: CommandInteraction = {
         const lastHyphenIndex = keywordAndId.lastIndexOf('-')
         const id = BigInt(keywordAndId.slice(lastHyphenIndex + 1))
         const tag = await client.database.deleteTag(id)
-        const guild = client.cache.guilds.get(interaction.guildId)
+        const embed: Partial<APIEmbed> = { color: 0xF8F8FF }
 
-        for (const keyword of tag.keywords)
-            guild.tags.remove(keyword)
+        if (tag) {
+            const guild = client.cache.guilds.get(interaction.guildId)
 
-        const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'Deleted tag!' }
+            for (const keyword of tag.keywords)
+                guild.tags.remove(keyword)
+    
+            embed.description = 'Deleted tag!'
+        } else
+            embed.description = 'No tag found.'
+
 
         await interaction.updateReply({ embeds: [embed] })
     }

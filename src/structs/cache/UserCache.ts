@@ -17,9 +17,12 @@ export class UserCache {
         return this.#items.get(key) ?? null
     }
 
-    insert(user: APIUser) {
+    insert(user: APIUser, shouldIncrementMutualGuilds = true) {
         const id = BigInt(user.id)
-        const mutualGuilds = (this.get(id)?.mutualGuilds ?? 0) + 1
+        const currentMutualGuilds = this.get(id)?.mutualGuilds ?? 0
+        const mutualGuilds = shouldIncrementMutualGuilds
+            ? currentMutualGuilds + 1
+            : currentMutualGuilds
 
         this.#items.set(
             id,

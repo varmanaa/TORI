@@ -16,7 +16,7 @@ export class ApplicationCommandInteraction {
     readonly guildId: bigint
     readonly id: string
     protected readonly options: APIApplicationCommandInteractionDataOption[]
-    protected readonly resolved: APIInteractionDataResolved
+    readonly resolved: APIInteractionDataResolved
     protected readonly rest: REST
     readonly subcommand: string | null
     protected readonly token: string
@@ -47,6 +47,22 @@ export class ApplicationCommandInteraction {
                 }
             }
         )
+    }
+
+    getBooleanOption(name: string): boolean {
+        const foundOption = this.options.find(option => option.name === name)
+
+        return foundOption && 'value' in foundOption
+            ? Boolean(foundOption.value.toString())
+            : false
+    }
+
+    getNumberOption(name: string): number {
+        const foundOption = this.options.find(option => option.name === name)
+
+        return foundOption && 'value' in foundOption
+            ? Number(foundOption.value.toString())
+            : null
     }
 
     getStringOption(name: string): string {

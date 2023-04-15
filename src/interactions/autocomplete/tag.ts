@@ -4,8 +4,7 @@ import type { APIApplicationCommandOptionChoice } from '@discordjs/core'
 
 export const TagAutocomplete: AutocompleteInteraction = {
     getChoices(interaction: ApplicationCommandAutocompleteInteraction, client: ToriClient): APIApplicationCommandOptionChoice<string>[] {
-        const { value } = interaction.getFocusedOption()
-        const valueLowercased = value.toString().toLowerCase()
+        const valueLowercased = interaction.getFocusedOption().value.toString().toLowerCase()
         const guild = client.cache.guilds.get(interaction.guildId)
         const choices: APIApplicationCommandOptionChoice<string>[] = []
 

@@ -21,7 +21,7 @@ export const autocompletes: Map<string, AutocompleteInteraction> = new Map([
     ['tag', TagAutocomplete]
 ])
 export const commands: Map<string, CommandInteraction> = new Map([
-    // ['game', GameCommand],
+    ['game', GameCommand],
     ['latency', LatencyCommand],
     ['tag', TagCommand]
 ])

@@ -25,7 +25,7 @@ export class GuildCache {
         return this.#items.get(key) ?? null
     }
 
-    insert(channels: APIChannel[], games: { d: string, t: string }[], id: bigint, members: APIGuildMember[], name: string, roles: APIRole[], tags: Tag[]) {
+    insert(channels: APIChannel[], games: { d: string, l: string }[], id: bigint, members: APIGuildMember[], name: string, roles: APIRole[], tags: Tag[]) {
         const channelIds: Set<bigint> = new Set()
         const gameCache = new GameCache()
         const memberCache = new MemberCache(this.#cache)
@@ -41,11 +41,16 @@ export class GuildCache {
             channelIds.add(BigInt(channel.id))
         }
 
-        for (const { d, t } of games)
-            gameCache.insert(d, t)
+        for (const { d, l } of games)
+            gameCache.insert(d, l)
 
         for (const member of members)
-            memberCache.insert({ ...member, guild_id: guildIdString })
+            memberCache.insert({
+                communication_disabled_until: member.communication_disabled_until,
+                guild_id: guildIdString,
+                roles: member.roles,
+                user: member.user
+            })
 
         for (const role of roles) {
             this.#cache.roles.insert(id, role)

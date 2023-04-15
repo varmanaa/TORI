@@ -46,7 +46,7 @@ export async function handleEvents(client: ToriClient) {
     client.on(GatewayDispatchEvents.GuildCreate, async payload => {
         const guild = payload.data
         const guildId = BigInt(guild.id)
-        const games = await client.database.readGuildGames(guildId)
+        const games = await client.database.readGuildGameKeys(guildId)
         const tags = await client.database.readGuildTags(guildId)
 
         client.cache.guilds.insert(
@@ -66,7 +66,12 @@ export async function handleEvents(client: ToriClient) {
         const guild = client.cache.guilds.get(guildId)
 
         if (guild)
-            guild.members.insert(member)
+            guild.members.insert({
+                communication_disabled_until: member.communication_disabled_until,
+                guild_id: member.guild_id,
+                roles: member.roles,
+                user: member.user
+            })
     })
     client.on(GatewayDispatchEvents.GuildMemberRemove, payload => {
         const userId = BigInt(payload.data.user.id)
@@ -90,7 +95,12 @@ export async function handleEvents(client: ToriClient) {
 
         if (guild) {
             for (const member of payload.data.members)
-                guild.members.insert({ ...member, guild_id: payload.data.guild_id })
+                guild.members.insert({
+                    communication_disabled_until: member.communication_disabled_until,
+                    guild_id: payload.data.guild_id,
+                    roles: member.roles,
+                    user: member.user
+                })
         }
     })
     client.on(GatewayDispatchEvents.GuildRoleCreate, payload => client.cache.roles.insert(BigInt(payload.data.guild_id), payload.data.role))
@@ -112,6 +122,22 @@ export async function handleEvents(client: ToriClient) {
         } else if (isChatInputApplicationCommandInteraction(p)) {
             const interaction = new ApplicationCommandInteraction(client.rest, p)
             const command = commands.get(p.data.name)
+            const guild = client.cache.guilds.get(interaction.guildId)
+
+            for (const resolvedMemberId of Object.keys(interaction.resolved?.members ?? {})) {
+                const { communication_disabled_until, roles } = interaction.resolved.members[resolvedMemberId]
+                const user = interaction.resolved.users[resolvedMemberId]
+
+                guild.members.insert(
+                    {
+                        communication_disabled_until,
+                        guild_id: payload.data.guild_id,
+                        roles,
+                        user
+                    },
+                    false
+                )
+            }
 
             await command.run(interaction, client)
         } else if (isModalSubmitInteraction(p)) {

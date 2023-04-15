@@ -1,10 +1,6 @@
 import type { Cache } from '#structs'
-import type { Member } from '#types/cache'
-import type {
-    APIGuildMember,
-    GatewayGuildMemberAddDispatchData,
-    GatewayGuildMemberUpdateDispatchData
-} from '@discordjs/core'
+import type { Member, MinimumGuildMember } from '#types/cache'
+import type { GatewayGuildMemberUpdateDispatchData } from '@discordjs/core'
 
 export class MemberCache {
     #cache: Cache
@@ -18,7 +14,7 @@ export class MemberCache {
         return this.#items.get(key) ?? null
     }
 
-    insert(member: APIGuildMember & { guild_id: string } | GatewayGuildMemberAddDispatchData) {
+    insert(member: MinimumGuildMember, shouldIncrementMutualGuilds = true) {
         const id = BigInt(member.user.id)
 
         this.#items.set(
@@ -32,7 +28,7 @@ export class MemberCache {
                 roleIds: member.roles.map(BigInt)
             }
         )
-        this.#cache.users.insert(member.user)
+        this.#cache.users.insert(member.user, shouldIncrementMutualGuilds)
     }
 
     remove(key: bigint) {

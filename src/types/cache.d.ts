@@ -6,6 +6,7 @@ import type {
 import type {
     APIGuildCategoryChannel,
     APIGuildForumChannel,
+    APIGuildMember,
     APIGuildStageVoiceChannel,
     APIGuildVoiceChannel,
     APINewsChannel,
@@ -14,6 +15,7 @@ import type {
     APIThreadChannel,
     ChannelFlags,
     ChannelType,
+    GatewayGuildMemberAddDispatchData,
     Permissions
 } from '@discordjs/core'
 
@@ -42,7 +44,7 @@ export type Guild = {
     id: bigint
     members: MemberCache
     name: string
-    roleIds: Set<bigint>,
+    roleIds: Set<bigint>
     tags: TagCache
 }
 
@@ -52,6 +54,11 @@ export type Member = {
     id: bigint
     roleIds: bigint[]
 }
+
+export type MinimumGuildMember = Required<Pick<
+    APIGuildMember & { guild_id: string } | GatewayGuildMemberAddDispatchData,
+    'communication_disabled_until' | 'guild_id' | 'roles' | 'user'
+>>
 
 export type Role = {
     guildId: bigint

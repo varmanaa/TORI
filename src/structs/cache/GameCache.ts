@@ -1,15 +1,20 @@
 export class GameCache {
     #items: Map<string, string> = new Map()
 
-    get(key: string): string | null {
-        return this.#items.get(key) ?? null
+    entries() {
+        return this.#items.entries()
     }
 
-    insert(d: string, t: string) {
-        this.#items.set(`${ d } (${ t })`, `${ d }_${ t }`)  
+    get(d: string, l: string): string | null {
+        return this.#items.get(`${ d } (${ l })`) ?? null
     }
 
-    remove(key: string) {
-        this.#items.delete(key)
+    insert(d: string, l: string) {
+
+        this.#items.set(`${ d } (${ l.charAt(0).toUpperCase() }${ l.slice(1).toLowerCase() })`, `${ d }_${ l }`)  
+    }
+
+    remove(d: string, l: string) {
+        this.#items.delete(`${ d } (${ l })`)
     }
 }
