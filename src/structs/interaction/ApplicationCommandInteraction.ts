@@ -15,6 +15,7 @@ export class ApplicationCommandInteraction {
     protected readonly applicationId: string
     readonly guildId: bigint
     readonly id: string
+    protected readonly invokerPermissions: number
     protected readonly options: APIApplicationCommandInteractionDataOption[]
     readonly resolved: APIInteractionDataResolved
     protected readonly rest: REST
@@ -25,6 +26,7 @@ export class ApplicationCommandInteraction {
         this.applicationId = interaction.application_id
         this.guildId = BigInt(interaction.guild_id)
         this.id = interaction.id
+        this.invokerPermissions = Number(interaction.member.permissions)
         this.options = interaction.data.options
         this.resolved = interaction.data.resolved
         this.rest = rest
@@ -71,6 +73,10 @@ export class ApplicationCommandInteraction {
         return foundOption && 'value' in foundOption
             ? foundOption.value.toString()
             : null
+    }
+
+    isInvokerAnAdmin(): boolean {
+        return (this.invokerPermissions & (1 << 3)) !== 0
     }
 
     async reply({ ...data }: Pick<APIInteractionResponseCallbackData, 'content' | 'components' | 'embeds' | 'flags'> = {}) {

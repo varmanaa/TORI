@@ -7,7 +7,7 @@ export const UpdateTagModal: ModalInteraction = {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
         const guild = client.cache.guilds.get(interaction.guildId)
-        const tagId = BigInt(interaction.data.custom_id.split('-')[2])
+        const tagId = Number(interaction.data.custom_id.split('-')[2])
 
         for (const [keyword, id] of guild.tags.entries())
             if (id === tagId)
@@ -26,7 +26,16 @@ export const UpdateTagModal: ModalInteraction = {
             return
         }
 
-        const tag = await client.database.updateTag(tagId, keywordsArray, content)
+        const existingKeywords = keywordsArray.filter(keyword => Boolean(guild.tags.get(keyword)))
+    
+        if (existingKeywords.length) {
+            embed.description = `The following keyword(s) are already used - ${ new Intl.ListFormat('en').format(existingKeywords) }.`
+        
+            await interaction.updateReply({ embeds: [embed] })
+            return 
+        }
+
+        const tag = await client.database.updateTag(interaction.guildId, tagId, keywordsArray, content)
 
         guild.tags.insert(tag)
         embed.description = 'Updated tag!'

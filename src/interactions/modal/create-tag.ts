@@ -20,7 +20,7 @@ export const CreateTagModal: ModalInteraction = {
         }
 
         const guild = client.cache.guilds.get(interaction.guildId)
-        const existingKeywords  = keywordsArray.filter(keyword => Boolean(guild.tags.get(keyword)))
+        const existingKeywords = keywordsArray.filter(keyword => Boolean(guild.tags.get(keyword)))
     
         if (existingKeywords.length) {
             embed.description = `The following keyword(s) are already used - ${ new Intl.ListFormat('en').format(existingKeywords) }.`

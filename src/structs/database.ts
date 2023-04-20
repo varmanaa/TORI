@@ -1,75 +1,107 @@
-import { GameBit } from '#types/interaction'
+import type { DatabaseGuildData, RequireAtLeastOne } from '#types/database'
 import {
-    type Game, GameLocation,
+    type InPersonGame,
+    type InPersonGameLocation,
+    type OnlineGame,
     PrismaClient,
     type Tag,
-    GameType
+    InPersonGameType
 } from '@prisma/client'
-
-type PartialGame = {
-    id: bigint
-    player_one_id: string
-    player_two_id: string
-    player_three_id: string
-    player_four_id: string
-    player_one_score: number
-    player_two_score: number
-    player_three_score: number
-    player_four_score: number
-    notes: string
-}
 
 export class Database {
     #prisma = new PrismaClient()
 
-    async deleteGame(id: bigint): Promise<Game> {
-        try {
-            const game = await this.#prisma.game.delete({ where: { id } })
+    async countInPersonGames(guildId: bigint, date: string, location: InPersonGameLocation): Promise<number> {
+        const { count } = await this.#prisma.$queryRawUnsafe<{ count: number }>(
+            `
+                SELECT
+                    COUNT(*)
+                FROM
+                    public.in_person
+                WHERE
+                    public.online_game.guild_id = $1
+                    AND public.online_game.date = $2::DATE
+                    AND public.online_game.location = $3'::"GameLocation"
+            `,
+            guildId,
+            date,
+            location
+        )
 
-            return game
-        } catch (error) {
+        return count
+    }
+
+    async countOnlineGames(guildId: bigint, date: string): Promise<number> {
+        const { count } = await this.#prisma.$queryRawUnsafe<{ count: number }>(
+            `
+                SELECT
+                    COUNT(*)
+                FROM
+                    public.online_game
+                WHERE
+                    public.online_game.guild_id = $1
+                    AND public.online_game.date = $2::DATE
+            `,
+            guildId,
+            date
+        )
+
+        return count
+    }
+
+    async deleteInPersonGame(guildId: bigint, id: number): Promise<InPersonGame> {
+        try {
+            const inPersonGame = await this.#prisma.inPersonGame.delete({ where: { guildId_id: { guildId, id } } })
+
+            return inPersonGame
+        } catch {
             return null
         }
     }
 
-    async deleteTag(id: bigint): Promise<Tag> {
+    async deleteOnlineGame(guildId: bigint, id: number): Promise<OnlineGame> {
         try {
-            const tag = await this.#prisma.tag.delete({ where: { id } })
+            const onlineGame = await this.#prisma.onlineGame.delete({ where: { guildId_id: { guildId, id } } })
+
+            return onlineGame
+        } catch {
+            return null
+        }
+    }
+
+    async deleteTag(guildId: bigint, id: number): Promise<Tag> {
+        try {
+            const tag = await this.#prisma.tag.delete({ where: { guildId_id: { guildId, id } } })
 
             return tag
-        } catch (error) {
+        } catch {
             return null
         }
     }
 
-    async insertGame(guildId: bigint, results: Record<string, number>, notes: string, bits: GameBit): Promise<Game> {
-        let location: GameLocation
-        let type: GameType
+    async insertGuild(guildId: bigint): Promise<void> {
+        await this.#prisma.$executeRawUnsafe(
+            `
+                INSERT INTO public.guild (guild_id)
+                VALUES ($1)
+                ON CONFLICT DO NOTHING;
+            `,
+            guildId
+        )
+    }
 
-        if (Boolean(bits & GameBit.Online))
-            location = GameLocation.ONLINE
-        if (Boolean(bits & GameBit.Peel))
-            location = GameLocation.PEEL
-        if (Boolean(bits & GameBit.Toronto))
-            location = GameLocation.TORONTO
-        if (Boolean(bits & GameBit.Unknown))
-            location = GameLocation.UNKNOWN
-        if (Boolean(bits & GameBit.Waterloo))
-            location = GameLocation.WATERLOO
-        if (Boolean(bits & GameBit.York))
-            location = GameLocation.YORK
-        if (Boolean(bits & GameBit.Potluck))
-            type = GameType.POTLUCK
-        if (Boolean(bits & GameBit.Space))
-            type = GameType.SPACE
-
-        const isEastOnly = Boolean(bits & GameBit.IsEastOnly)
+    async insertInPersonGame(guildId: bigint, results: Record<string, number>, location: InPersonGameLocation, type: InPersonGameType, notes: string): Promise<InPersonGame> {
+        const { inPersonCount: id } = await this.#prisma.guild.update({
+            data: { inPersonCount: { increment: 1 } },
+            select: { inPersonCount: true },
+            where: { guildId }
+        })
         const players = Object.keys(results)
         const scores = Object.values(results)
-        const game = await this.#prisma.game.create({
+        const inPersonGame = await this.#prisma.inPersonGame.create({
             data: {
                 guildId,
-                location,
+                id,
                 playerOneId: players[0],
                 playerTwoId: players[1],
                 playerThreeId: players[2],
@@ -78,111 +110,121 @@ export class Database {
                 playerTwoScore: scores[1],
                 playerThreeScore: scores[2],
                 playerFourScore: scores?.[3] ?? null,
+                location,
                 type,
-                isEastOnly,
-                notes
+                notes                
             }
         })
+        
+        return inPersonGame
+    }
 
-        return game
+    async insertOnlineGame(guildId: bigint, url: string): Promise<OnlineGame> {
+        const { onlineCount: id } = await this.#prisma.guild.update({
+            data: { onlineCount: { increment: 1 } },
+            select: { onlineCount: true },
+            where: { guildId }
+        })
+        const onlineGame = await this.#prisma.onlineGame.create({
+            data: {
+                guildId,
+                id,
+                url
+            }
+        })
+        
+        return onlineGame
     }
 
     async insertTag(guildId: bigint, keywords: string[], content: string): Promise<Tag> {
-        const tag = await this.#prisma.tag.create({ data: { guildId, keywords, content } })
+        const { tagCount: id } = await this.#prisma.guild.update({
+            data: { tagCount: { increment: 1 } },
+            select: { tagCount: true },
+            where: { guildId }
+        })
+        const tag = await this.#prisma.tag.create({ data: { guildId, id, keywords, content } })
 
         return tag
     }
 
-    async readGame(guildId: bigint, id: bigint): Promise<Game> {
-        const game = await this.#prisma.game.findFirst({ where: { guildId, id } })
-
-        return game
-    }
-
-    async readGuildGames(guildId: bigint, d: string, l: string): Promise<PartialGame[]> {
-        try {
-            const result = await this.#prisma.$queryRawUnsafe<PartialGame[]>(
-                `
-                    SELECT
-                        id,
-                        player_one_id,
-                        player_two_id,
-                        player_three_id,
-                        player_four_id,
-                        player_one_score,
-                        player_two_score,
-                        player_three_score,
-                        player_four_score,
-                        notes
-                    FROM
-                        public.game
-                    WHERE
-                        public.game.guild_id = $1
-                        AND (public.game.created_at AT TIME ZONE 'America/Toronto')::DATE >= $2::DATE
-                        AND public.game.location = $3::"GameLocation"
-                    ORDER BY
-                        public.game.id
-                `,
-                guildId,
-                d,
-                l
-            )
-    
-            return result  
-        } catch (error) {
-            return []
-        }
-
-    }
-
-    async readGuildGameKeys(guildId: bigint): Promise<{ d: string, l: string }[]> {
-        const result = await this.#prisma.$queryRawUnsafe<{ d: string, l: string }[]>(
-            `
-                SELECT DISTINCT
-                    TO_CHAR(public.game.created_at AT TIME ZONE 'America/Toronto', 'YYYY-MM-DD') AS d,
-                    public.game.location::TEXT AS l
-                FROM
-                    public.game
-                WHERE
-                    public.game.guild_id = $1;
-            `,
-            guildId
-        )
-
-        return result
-    }
-
-    async readGuildTags(guildId: bigint): Promise<Tag[]> {
+    async readGuild(guildId: bigint): Promise<DatabaseGuildData> {
+        const inPersonGames = await this.#prisma.inPersonGame.findMany({ select: { date: true, location: true }, where: { guildId } })
+        const onlineGames = await this.#prisma.onlineGame.findMany({ select: { date: true }, where: { guildId } })
         const tags = await this.#prisma.tag.findMany({ where: { guildId } })
 
-        return tags
+        return {
+            inPersonGames,
+            onlineGames,
+            tags
+        }
     }
 
-    async readTag(id: bigint): Promise<Tag> {
-        const tag = await this.#prisma.tag.findUnique({ where: { id } })
+    async readInPersonGame(guildId: bigint, id: number): Promise<InPersonGame> {
+        const inPersonGame = await this.#prisma.inPersonGame.findFirst({ where: { guildId, id } })
+
+        return inPersonGame
+    }
+
+    async readInPersonGames(guildId: bigint, date: string, location: InPersonGameLocation): Promise<InPersonGame[]> {
+        const inPersonGames = await this.#prisma.inPersonGame.findMany({ where: { guildId, date, location } })
+
+        return inPersonGames
+    }
+
+    async readOnlineGame(guildId: bigint, id: number): Promise<OnlineGame> {
+        const onlineGame = await this.#prisma.onlineGame.findFirst({ where: { guildId, id } })
+
+        return onlineGame
+    }
+
+    async readOnlineGames(guildId: bigint, date: string): Promise<OnlineGame[]> {
+        const onlineGames = await this.#prisma.onlineGame.findMany({ where: { guildId, date } })
+
+        return onlineGames
+    }
+
+    async readTag(guildId: bigint, id: number): Promise<Tag> {
+        const tag = await this.#prisma.tag.findUnique({ where: { guildId_id: { guildId, id } } })
 
         return tag
     }
 
-    async updateTag(id: bigint, keywords: string[], content: string): Promise<Tag> {
-        const tag = await this.#prisma.tag.update({ data: { keywords, content }, where: { id } })
+    async updateInPersonGame(guildId: bigint, id: number, data: { date: string } | Record<string, number>): Promise<InPersonGame> {
+        let inPersonGame: InPersonGame
+        
+        if ('date' in data)
+            inPersonGame = await this.#prisma.inPersonGame.update({ data, where: { guildId_id: { guildId, id } } })
+        else {
+            const players = Object.keys(data)
+            const scores = Object.values(data)
 
-        return tag
+            inPersonGame = await this.#prisma.inPersonGame.update({
+                data: {
+                    playerOneId: players[0],
+                    playerTwoId: players[1],
+                    playerThreeId: players[2],
+                    playerFourId: players?.[3] ?? null,
+                    playerOneScore: scores[0],
+                    playerTwoScore: scores[1],
+                    playerThreeScore: scores[2],
+                    playerFourScore: scores?.[3] ?? null,
+                },
+                where: { guildId_id: { guildId, id } }
+            })
+        }
+        
+        return inPersonGame
     }
 
-    async updateGame(id: bigint, results: Record<string, number>, notes: string): Promise<Game> {
-        const scores = Object.values(results)
-        const game = await this.#prisma.game.update({
-            data: {
-                playerOneScore: scores[0],
-                playerTwoScore: scores[1],
-                playerThreeScore: scores[2],
-                playerFourScore: scores?.[3] ?? null,
-                notes
-            },
-            where: { id }
-        })
+    async updateOnlineGame(guildId: bigint, id: number, data: RequireAtLeastOne<OnlineGame, 'date' | 'url'>): Promise<OnlineGame> {
+        const onlineGame = await this.#prisma.onlineGame.update({ data, where: { guildId_id: { guildId, id } } })
+    
+        return onlineGame
+    }
 
-        return game
+    async updateTag(guildId: bigint, id: number, keywords: string[], content: string): Promise<Tag> {
+        const tag = await this.#prisma.tag.update({ data: { keywords, content }, where: { guildId_id: { guildId, id } } })
+    
+        return tag
     }
 }

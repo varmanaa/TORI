@@ -1,13 +1,13 @@
 import type { Tag } from '@prisma/client'
 
 export class TagCache {
-    #items: Map<string, bigint> = new Map()
+    #items: Map<string, number> = new Map()
 
     entries() {
         return this.#items.entries()
     }
 
-    get(key: string): bigint | null {
+    get(key: string): number | null {
         return this.#items.get(key) ?? null
     }
 

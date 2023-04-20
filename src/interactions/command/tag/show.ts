@@ -2,6 +2,7 @@ import type { ApplicationCommandInteraction, ToriClient } from '#structs'
 import type { CommandInteraction } from '#types/interaction'
 import {
     type APIApplicationCommandOption,
+    type APIEmbed,
     ApplicationCommandOptionType,
     MessageFlags
  } from '@discordjs/core'
@@ -36,10 +37,17 @@ export const TagShowCommand: CommandInteraction = {
         const keyword = keywordAndId.slice(0, lastHyphenIndex)
         const userId = interaction.getStringOption('user')
         const title = `*Tag suggestion (${ keyword })${ userId ? ` for <@${ userId }>` : '' }:*`
-        const id = BigInt(keywordAndId.slice(lastHyphenIndex + 1))
-        const { content: c } = await client.database.readTag(id)
-        const content = `${ title }\n${ c }`
+        const id = Number(keywordAndId.slice(lastHyphenIndex + 1))
+        const tag = await client.database.readTag(interaction.guildId, id) 
 
-        await interaction.updateReply({ content })
+        if (!tag) {
+            const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'No tag found.' }
+
+            await interaction.updateReply({ embeds: [embed] })
+        } else {
+            const content = `${ title }\n${ tag.content }`
+
+            await interaction.updateReply({ content })
+        }
     }
 }

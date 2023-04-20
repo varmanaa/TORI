@@ -3,6 +3,7 @@ import type { CommandInteraction } from '#types/interaction'
 import {
     type APIEmbed,
     ApplicationCommandType,
+    MessageFlags,
     type RESTPostAPIApplicationCommandsJSONBody
 } from '@discordjs/core'
 import { TagAddCommand } from './add.js'
@@ -32,16 +33,21 @@ export const TagCommand: CommandInteraction = {
         }
     },
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
-        switch (interaction.subcommand) {
-            case TagCommandSubcommand.Add: return TagAddCommand.run(interaction, client)
-            case TagCommandSubcommand.Delete: return TagDeleteCommand.run(interaction, client)
-            case TagCommandSubcommand.Show: return TagShowCommand.run(interaction, client)
-            case TagCommandSubcommand.Update: return TagUpdateCommand.run(interaction, client)
-            default: {
-                const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'Unknown subcommand' }
+        if (interaction.subcommand !== TagCommandSubcommand.Show && !interaction.isInvokerAnAdmin()) {
+            const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'You must have administrator permissions to use this subcommand.' }
 
-                await interaction.reply({ embeds: [embed] })
+            await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral })
+        } else
+            switch (interaction.subcommand) {
+                case TagCommandSubcommand.Add: return TagAddCommand.run(interaction, client)
+                case TagCommandSubcommand.Delete: return TagDeleteCommand.run(interaction, client)
+                case TagCommandSubcommand.Show: return TagShowCommand.run(interaction, client)
+                case TagCommandSubcommand.Update: return TagUpdateCommand.run(interaction, client)
+                default: {
+                    const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'Unknown subcommand' }
+
+                    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral })
+                }
             }
-        }
     }
 }

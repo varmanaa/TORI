@@ -31,13 +31,16 @@ export interface ModalInteraction {
 }
 
 export const enum GameBit {
-    Online = 1 << 0,
-    Peel = 1 << 1,
-    Toronto = 1 << 2,
-    Unknown = 1 << 3,
-    Waterloo = 1 << 4,
-    York = 1 << 5,
-    Potluck = 1 << 6,
-    Space = 1 << 7,
-    IsEastOnly = 1 << 8
+    Peel = 1 << 0,
+    Toronto = 1 << 1,
+    Waterloo = 1 << 2,
+    York = 1 << 3,
+    East = 1 << 4,
+    PotluckEast = 1 << 5,
+    PotluckSouth = 1 << 6,
+    SanmaEast = 1 << 7,
+    SanmaSouth = 1 << 8,
+    South = 1 << 9,
+    SpaceEast = 1 << 10,
+    SpaceSouth = 1 << 11
 }

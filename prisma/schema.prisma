@@ -10,46 +10,75 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-enum GameLocation {
-    ONLINE   @map("ONLINE")
+enum InPersonGameLocation {
     PEEL     @map("PEEL")
     TORONTO  @map("TORONTO")
-    UNKNOWN  @map("UNKNOWN")
     WATERLOO @map("WATERLOO")
     YORK     @map("YORK")
 }
 
-enum GameType {
-    POTLUCK @map("POTLUCK")
-    SPACE   @map("SPACE")
+enum InPersonGameType {
+    EAST          @map("EAST")
+    POTLUCK_EAST  @map("POTLUCK_EAST")
+    POTLUCK_SOUTH @map("POTLUCK_SOUTH")
+    SANMA_EAST    @map("SANMA_EAST")
+    SANMA_SOUTH   @map("SANMA_SOUTH")
+    SOUTH         @map("SOUTH")
+    SPACE_EAST    @map("SPACE_EAST")
+    SPACE_SOUTH   @map("SPACE_SOUTH")
 }
 
-model Game {
-    id               BigInt       @id @default(autoincrement())
-    guildId          BigInt       @map("guild_id")
-    location         GameLocation
-    playerOneId      String       @map("player_one_id")
-    playerTwoId      String       @map("player_two_id")
-    playerThreeId    String       @map("player_three_id")
-    playerFourId     String?      @map("player_four_id")
-    playerOneScore   Int          @map("player_one_score")
-    playerTwoScore   Int          @map("player_two_score")
-    playerThreeScore Int          @map("player_three_score")
-    playerFourScore  Int?         @map("player_four_score")
-    type             GameType?
-    isEastOnly       Boolean      @default(false) @map("is_east_only")
-    notes            String?      @map("notes")
-    createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz()
-    updatedAt        DateTime?    @updatedAt @map("updated_at") @db.Timestamptz()
+model Guild {
+    guildId       BigInt    @id @map("guild_id")
+    inPersonCount Int       @default(0) @map("in_person_count")
+    onlineCount   Int       @default(0) @map("online_count")
+    tagCount      Int       @default(0) @map("tag_count")
+    createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
 
-    @@map("game")
+    @@map("guild")
+}
+
+model InPersonGame {
+    guildId          BigInt               @map("guild_id")
+    id               Int
+    playerOneId      String               @map("player_one_id")
+    playerTwoId      String               @map("player_two_id")
+    playerThreeId    String               @map("player_three_id")
+    playerFourId     String?              @map("player_four_id")
+    playerOneScore   Int                  @map("player_one_score")
+    playerTwoScore   Int                  @map("player_two_score")
+    playerThreeScore Int                  @map("player_three_score")
+    playerFourScore  Int?                 @map("player_four_score")
+    location         InPersonGameLocation 
+    type             InPersonGameType     @default(SOUTH)
+    notes            String?              @map("notes")
+    date             DateTime             @default(now()) @db.Date()
+    createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt        DateTime?            @updatedAt @map("updated_at") @db.Timestamptz()
+
+    @@id([guildId, id])
+    @@map("in_person_game")
+}
+
+model OnlineGame {
+    guildId   BigInt    @map("guild_id")
+    id        Int
+    url       String
+    date      DateTime  @default(now()) @db.Date()
+    createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+    updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+
+    @@id([guildId, id])
+    @@map("online_game")
 }
 
 model Tag {
-    id       BigInt   @id @default(autoincrement())
     guildId  BigInt   @map("guild_id")
+    id       Int
     keywords String[]
     content  String
 
+    @@id([guildId, id])
     @@map("tag")
 }

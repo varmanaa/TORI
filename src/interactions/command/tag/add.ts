@@ -39,7 +39,7 @@ export const TagAddCommand: CommandInteraction = {
                         {
                             custom_id: 'content',
                             label: 'Tag content',
-                            max_length: 2500,
+                            max_length: 1500,
                             placeholder: 'To ron, to riichi...',
                             required: true,
                             style: TextInputStyle.Paragraph,

@@ -7,17 +7,18 @@ import {
     ApplicationCommandOptionType,
     MessageFlags
  } from '@discordjs/core'
+import type{ InPersonGameLocation } from '@prisma/client'
 
-export const GameListCommand: CommandInteraction = {
-    getCommand(): APIApplicationCommandOption  {
+export const InPersonListCommand: CommandInteraction = {
+    getCommand(): APIApplicationCommandOption {
         return {
-            description: 'List games (by date)',
+            description: 'List in-person games (by date)',
             name: 'list',
             options: [
                 {
                     autocomplete: true,
-                    description: 'The games to look for',
-                    name: 'game',
+                    description: 'The date to look for',
+                    name: 'date',
                     required: true,
                     type: ApplicationCommandOptionType.String
                 }
@@ -27,25 +28,22 @@ export const GameListCommand: CommandInteraction = {
     },
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
-
-        const dateAndType = interaction.getStringOption('game')
-        const lastUnderscoreIndex = dateAndType.lastIndexOf('_')
-        const d = dateAndType.slice(0, lastUnderscoreIndex)
-        const l = dateAndType.slice(lastUnderscoreIndex + 1)
-        const games = await client.database.readGuildGames(interaction.guildId, d, l)
-        const embeds: Partial<APIEmbed>[] = games.length
+        
+        const [date, location] = interaction.getStringOption('date').split('_') as  [string, InPersonGameLocation]
+        const inPersonGames = await client.database.readInPersonGames(interaction.guildId, date, location)
+        const embeds: Partial<APIEmbed>[] = inPersonGames.length
             ? Array
-                .from({ length: Math.ceil(games.length / 5) }, (_, i) => games.slice(5 * i, 5 * (i + 1)))
-                .map((gameChunk, i) => {
-                    const fields: APIEmbedField[] = gameChunk.map(game => {
+                .from({ length: Math.ceil(inPersonGames.length / 5) }, (_, i) => inPersonGames.slice(5 * i, 5 * (i + 1)))
+                .map((inPersonGameChunk, i) => {
+                    const fields: APIEmbedField[] = inPersonGameChunk.map(game => {
                         const players: Record<string, number> = {
-                            [game.player_one_id]: game.player_one_score,
-                            [game.player_two_id]: game.player_two_score,
-                            [game.player_three_id]: game.player_three_score
+                            [game.playerOneId]: game.playerOneScore,
+                            [game.playerTwoId]: game.playerTwoScore,
+                            [game.playerThreeId]: game.playerThreeScore
                         }
                 
-                        if (game.player_four_id)
-                            players[game.player_four_id] = game.player_four_score
+                        if (game.playerFourId)
+                            players[game.playerFourId] = game.playerFourScore
 
                         const value = Object
                             .entries(players)
@@ -74,10 +72,10 @@ export const GameListCommand: CommandInteraction = {
                     return {
                         color: 0xF8F8FF,
                         fields,
-                        footer: { text: `Showing game${ gameChunk.length === 1 ? '' : 's' } ${ (5 * i) + 1}${ gameChunk.length === 1 ? '' : ` - ${ (5 * i) + gameChunk.length }` } of ${ games.length }` }
+                        footer: { text: `Showing game${ inPersonGameChunk.length === 1 ? '' : 's' } ${ (5 * i) + 1}${ inPersonGameChunk.length === 1 ? '' : ` - ${ (5 * i) + inPersonGameChunk.length }` } of ${ inPersonGames.length }` }
                     }
                 })
-            : [{ color: 0xF8F8FF, description: 'No games found!' }]
+            : [{ color: 0xF8F8FF, description: `No games found in ${ location.charAt(0).toUpperCase() }${ location.slice(1).toLowerCase() } for ${ date }.` }]
 
         await interaction.updateReply({ embeds })
     }

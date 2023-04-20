@@ -1,5 +1,5 @@
 import type { ApplicationCommandInteraction } from '#structs'
-import { CommandInteraction, GameBit } from '#types/interaction'
+import { type CommandInteraction, GameBit } from '#types/interaction'
 import {
     type APIActionRowComponent,
     type APIApplicationCommandOption,
@@ -8,23 +8,23 @@ import {
     type APITextInputComponent,
     ApplicationCommandOptionType,
     ComponentType,
+    MessageFlags,
     TextInputStyle
 } from '@discordjs/core'
-import { GameLocation, GameType } from '@prisma/client'
+import { InPersonGameLocation, InPersonGameType } from '@prisma/client'
 
-export const GameCreateCommand: CommandInteraction = {
+export const InPersonRecordCommand: CommandInteraction = {
     getCommand(): APIApplicationCommandOption {
         return {
-            description: 'Create game',
-            name: 'create',
+            description: 'Record an in-person game',
+            name: 'record',
             options: [
                 {
                     choices: [
-                        { name: 'Meetup (Peel)', value: GameLocation.PEEL },
-                        { name: 'Meetup (Toronto)', value: GameLocation.TORONTO },
-                        { name: 'Meetup (Waterloo)', value: GameLocation.WATERLOO },
-                        { name: 'Meetup (York)', value: GameLocation.YORK },
-                        { name: 'Online', value: GameLocation.ONLINE }
+                        { name: 'Peel', value: InPersonGameLocation.PEEL },
+                        { name: 'Toronto', value: InPersonGameLocation.TORONTO },
+                        { name: 'Waterloo', value: InPersonGameLocation.WATERLOO },
+                        { name: 'York', value: InPersonGameLocation.YORK }
                     ],
                     description: 'The game location',
                     name: 'location',
@@ -56,23 +56,26 @@ export const GameCreateCommand: CommandInteraction = {
                 },
                 {
                     choices: [
-                        { name: 'Potluck', value: GameType.POTLUCK },
-                        { name: 'Space', value: GameType.SPACE }
+                        { name: 'Hanchan', value: InPersonGameType.SOUTH },
+                        { name: 'Potluck (tonpuusen)', value: InPersonGameType.POTLUCK_EAST },
+                        { name: 'Potluck (hanchan)', value: InPersonGameType.POTLUCK_SOUTH },
+                        { name: 'Sanma (tonpuusen)', value: InPersonGameType.SANMA_EAST },
+                        { name: 'Sanma (hanchan)', value: InPersonGameType.SANMA_SOUTH },
+                        { name: 'Space (tonpuusen)', value: InPersonGameType.SPACE_EAST },
+                        { name: 'Space (hanchan)', value: InPersonGameType.SANMA_SOUTH },
+                        { name: 'Tonpuusen', value: InPersonGameType.EAST }
                     ],
                     description: 'The game type',
                     name: 'type',
                     type: ApplicationCommandOptionType.String
                 },
-                {
-                    description: 'Is this game an east-only game?',
-                    name: 'east-only',
-                    type: ApplicationCommandOptionType.Boolean
-                }
             ],
             type: ApplicationCommandOptionType.Subcommand
         }
     },
     async run(interaction: ApplicationCommandInteraction): Promise<void> {
+        await interaction.defer({ flags: MessageFlags.Ephemeral })
+
         const players: Record<string, string> = {}
 
         for (const name of ['player-one', 'player-two', 'player-three', 'player-four']) {
@@ -104,26 +107,26 @@ export const GameCreateCommand: CommandInteraction = {
 
         let bits: number
 
-        const location = interaction.getStringOption('location') as GameLocation
-        const type = interaction.getStringOption('type') as GameType
-        const isEastOnly = interaction.getBooleanOption('east-only')
+        const location = interaction.getStringOption('location') as InPersonGameLocation
+        const type = interaction.getStringOption('type') as InPersonGameType
 
         switch (location) {
-            case 'ONLINE': { bits |= GameBit.Online; break; }
             case 'PEEL': { bits |= GameBit.Peel; break; }
             case 'TORONTO': { bits |= GameBit.Toronto; break; }
-            case 'UNKNOWN': { bits |= GameBit.Unknown; break; }
             case 'WATERLOO': { bits |= GameBit.Waterloo; break; }
             case 'YORK': { bits |= GameBit.York; break; }
         }
-        
-        switch (type) {
-            case 'POTLUCK': { bits |= GameBit.Potluck; break; }
-            case 'SPACE': { bits |= GameBit.Space; break; }
-        }
 
-        if (isEastOnly)
-            bits |= GameBit.IsEastOnly
+        switch (type) {
+            case 'EAST': { bits |= GameBit.East; break; }
+            case 'POTLUCK_EAST': { bits |= GameBit.PotluckEast; break; }
+            case 'POTLUCK_SOUTH': { bits |= GameBit.PotluckSouth; break; }
+            case 'SANMA_EAST': { bits |= GameBit.SanmaEast; break; }
+            case 'SANMA_SOUTH': { bits |= GameBit.SanmaSouth; break; }
+            case 'SOUTH': { bits |= GameBit.South; break; }
+            case 'SPACE_EAST': { bits |= GameBit.SpaceEast; break; }
+            case 'SPACE_SOUTH': { bits |= GameBit.SpaceSouth; break; }
+        }
 
         const playerComponents: APIActionRowComponent<APITextInputComponent>[] = Object
             .entries(players)
@@ -159,8 +162,8 @@ export const GameCreateCommand: CommandInteraction = {
                     type: ComponentType.ActionRow
                 }
             ],
-            custom_id: `create-game-${ bits }`,
-            title: 'Create game'
+            custom_id: `record-in-person-game-${ bits }`,
+            title: 'Record in-person game'
         }
 
         await interaction.replyWithModal(modal)

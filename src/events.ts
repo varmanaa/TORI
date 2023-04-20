@@ -44,20 +44,13 @@ export async function handleEvents(client: ToriClient) {
         client.cache.channels.insert(channel)
     })
     client.on(GatewayDispatchEvents.GuildCreate, async payload => {
-        const guild = payload.data
-        const guildId = BigInt(guild.id)
-        const games = await client.database.readGuildGameKeys(guildId)
-        const tags = await client.database.readGuildTags(guildId)
+        const gatewayGuildData = payload.data
+        const guildId = BigInt(gatewayGuildData.id)
+        const databaseGuildData = await client.database.readGuild(guildId)
 
-        client.cache.guilds.insert(
-            guild.channels,
-            games,
-            guildId,
-            guild.members,
-            guild.name,
-            guild.roles,
-            tags
-        )
+        await client.database.insertGuild(guildId)
+
+        client.cache.guilds.insert(gatewayGuildData, databaseGuildData)
     })
     client.on(GatewayDispatchEvents.GuildDelete, payload => client.cache.guilds.remove(BigInt(payload.data.id), payload.data.unavailable))
     client.on(GatewayDispatchEvents.GuildMemberAdd, payload => {
@@ -161,14 +154,36 @@ export async function handleEvents(client: ToriClient) {
             )
         }
     })
-    client.on(GatewayDispatchEvents.Ready, payload => {
+    client.on(GatewayDispatchEvents.Ready, async payload => {
         const { user } = payload.data
         const unavailableGuildIds = payload.data.guilds.map(guild => BigInt(guild.id))
+        const commandJSON = [...commands.values()].map(command => command.getCommand())
+
+        client.id = BigInt(user.id)
 
         for (const unavailableGuildId of unavailableGuildIds)
             client.cache.unavailableGuilds.insert(unavailableGuildId)
 
-        client.id = BigInt(user.id)
+        if (process.env.NODE_ENV === 'production') {
+            await client
+                .api
+                .applicationCommands
+                .bulkOverwriteGlobalCommands(client.id.toString(), commandJSON)
+            await client
+                .api
+                .applicationCommands
+                .bulkOverwriteGuildCommands(client.id.toString(), process.env.DEVELOPMENT_GUILD_ID, [])
+        } else {
+            await client
+                .api
+                .applicationCommands
+                .bulkOverwriteGlobalCommands(client.id.toString(), [])
+            await client
+                .api
+                .applicationCommands
+                .bulkOverwriteGuildCommands(client.id.toString(), process.env.DEVELOPMENT_GUILD_ID, commandJSON)
+        }
+
         console.log(`${ user.username }#${ user.discriminator } is online!`)
     })
     client.ws.on(WebSocketShardEvents.HeartbeatComplete, payload => {

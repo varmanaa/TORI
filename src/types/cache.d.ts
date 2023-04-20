@@ -18,6 +18,16 @@ import type {
     GatewayGuildMemberAddDispatchData,
     Permissions
 } from '@discordjs/core'
+import type { InPersonGameLocation } from '@prisma/client'
+
+export type APIGuildChannel =
+    | APIGuildCategoryChannel
+    | APIGuildForumChannel
+    | APIGuildStageVoiceChannel
+    | APIGuildVoiceChannel
+    | APINewsChannel
+    | APITextChannel
+    | APIThreadChannel
 
 export type Channel = {
     flags: ChannelFlags | null
@@ -29,14 +39,7 @@ export type Channel = {
     type: Omit<ChannelType, ChannelType.DM | ChannelType.GroupDM>
 }
 
-export type APIGuildChannel =
-    | APIGuildCategoryChannel
-    | APIGuildForumChannel
-    | APIGuildStageVoiceChannel
-    | APIGuildVoiceChannel
-    | APINewsChannel
-    | APITextChannel
-    | APIThreadChannel
+export type GameLocation = InPersonGameLocation | 'ONLINE'
 
 export type Guild = {
     channelIds: Set<bigint>

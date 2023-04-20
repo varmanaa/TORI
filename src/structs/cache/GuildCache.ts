@@ -5,13 +5,10 @@ import {
     TagCache
 } from '#structs'
 import type { Guild } from '#types/cache'
+import type { DatabaseGuildData } from '#types/database'
 import { isGuildChannel } from '#utility'
-import type {
-    APIChannel,
-    APIGuildMember,
-    APIRole
-} from '@discordjs/core'
-import type { Tag } from '@prisma/client'
+import type { GatewayGuildCreateDispatchData } from '@discordjs/core'
+import dayjs from 'dayjs'
 
 export class GuildCache {
     #cache: Cache
@@ -25,48 +22,53 @@ export class GuildCache {
         return this.#items.get(key) ?? null
     }
 
-    insert(channels: APIChannel[], games: { d: string, l: string }[], id: bigint, members: APIGuildMember[], name: string, roles: APIRole[], tags: Tag[]) {
+    insert(gatewayGuildData: GatewayGuildCreateDispatchData, databaseGuildData: DatabaseGuildData) {
+        const { channels, id: guild_id, members, name, roles } = gatewayGuildData
+        const { inPersonGames, onlineGames, tags } = databaseGuildData
+        const guildId = BigInt(guild_id)
         const channelIds: Set<bigint> = new Set()
+        const roleIds: Set<bigint> = new Set()
         const gameCache = new GameCache()
         const memberCache = new MemberCache(this.#cache)
-        const guildIdString = id.toString()
-        const roleIds: Set<bigint> = new Set()
         const tagCache = new TagCache()
 
         for (const channel of channels) {
             if (!isGuildChannel(channel))
                 continue
 
-            this.#cache.channels.insert({ ...channel, guild_id: guildIdString })
+            this.#cache.channels.insert({ ...channel, guild_id })
             channelIds.add(BigInt(channel.id))
         }
 
-        for (const { d, l } of games)
-            gameCache.insert(d, l)
+        for (const inPersonGame of inPersonGames)
+            gameCache.insert(dayjs(inPersonGame.date).format('YYYY-MM-DD'), inPersonGame.location)
 
         for (const member of members)
             memberCache.insert({
                 communication_disabled_until: member.communication_disabled_until,
-                guild_id: guildIdString,
+                guild_id,
                 roles: member.roles,
                 user: member.user
             })
 
+        for (const onlineGame of onlineGames)
+            gameCache.insert(dayjs(onlineGame.date).format('YYYY-MM-DD'), 'ONLINE')
+
         for (const role of roles) {
-            this.#cache.roles.insert(id, role)
+            this.#cache.roles.insert(guildId, role)
             roleIds.add(BigInt(role.id))
         }
 
         for (const tag of tags)
             tagCache.insert(tag)
-
-        this.#cache.unavailableGuilds.remove(id)
+    
+        this.#cache.unavailableGuilds.remove(guildId)
         this.#items.set(
-            id,
+            guildId,
             {
                 channelIds,
                 games: gameCache,
-                id,
+                id: guildId,
                 members: memberCache,
                 name,
                 roleIds,

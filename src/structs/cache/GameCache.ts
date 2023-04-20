@@ -1,20 +1,39 @@
+import type { GameLocation } from '#types/cache'
+
 export class GameCache {
-    #items: Map<string, string> = new Map()
+    #items: Map<string, Record<Required<GameLocation>, boolean>> = new Map()
 
     entries() {
         return this.#items.entries()
     }
 
-    get(d: string, l: string): string | null {
-        return this.#items.get(`${ d } (${ l })`) ?? null
+    get(key: string): Record<Required<GameLocation>, boolean> | null {
+        return this.#items.get(key) ?? null
     }
 
-    insert(d: string, l: string) {
+    insert(date: string, location: GameLocation) {
+        const games: Record<Required<GameLocation>, boolean> = this.get(date) ?? {
+            ONLINE: false,
+            PEEL: false,
+            TORONTO: false,
+            WATERLOO: false,
+            YORK: false
+        }
 
-        this.#items.set(`${ d } (${ l.charAt(0).toUpperCase() }${ l.slice(1).toLowerCase() })`, `${ d }_${ l }`)  
+        games[location] = true
+
+        this.#items.set(date, games)  
     }
 
-    remove(d: string, l: string) {
-        this.#items.delete(`${ d } (${ l })`)
+    remove(date: string, location: GameLocation) {
+        const games = this.get(date)
+
+        if (!games)
+            return
+
+        games[location] = false
+
+        if (Object.values(games).every(v => !v))
+            this.#items.delete(date)
     }
 }

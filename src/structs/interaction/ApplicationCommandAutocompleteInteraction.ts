@@ -12,6 +12,7 @@ import type { REST } from '@discordjs/rest'
 export class ApplicationCommandAutocompleteInteraction {
     readonly guildId: bigint
     protected readonly id: string
+    readonly name: string
     protected readonly options: APIApplicationCommandInteractionDataOption[]
     protected readonly rest: REST
     readonly subcommand: string | null
@@ -20,6 +21,7 @@ export class ApplicationCommandAutocompleteInteraction {
     constructor(rest: REST, interaction: APIApplicationCommandAutocompleteGuildInteraction ) {
         this.guildId = BigInt(interaction.guild_id)
         this.id = interaction.id
+        this.name = interaction.data.name
         this.options = interaction.data.options
         this.rest = rest
         this.token = interaction.token

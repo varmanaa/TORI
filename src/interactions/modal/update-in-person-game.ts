@@ -1,20 +1,17 @@
 import type { ModalSubmitInteraction, ToriClient } from '#structs'
 import type { ModalInteraction } from '#types/interaction'
 import { type APIEmbed, MessageFlags } from '@discordjs/core'
-import dayjs from 'dayjs'
 
-export const CreateGameModal: ModalInteraction = {
+export const UpdateInPersonGameModal: ModalInteraction = {
     async handle(interaction: ModalSubmitInteraction, client: ToriClient): Promise<void> {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
         const embed: Partial<APIEmbed> = { color: 0xF8F8FF }
-        const values = Object.entries(interaction.values())
-        const notes = values.pop()[1]
         const results: Record<string, number> = {}
 
         let totalScore = 0
 
-        for (const [player, submittedScore] of values) {
+        for (const [player, submittedScore] of Object.entries(interaction.values())) {
             if (!/^((0|-?100,?000|-?([1-9]|[1-9]\d?,?\d)00)|(-?(0?\.[1-9]|100(\.0)?|([1-9]\d?(\.\d)?))k?))$/g.test(submittedScore)) {
                 embed.description = 'One or more scores are in an invalid format. Please try again.'
 
@@ -41,13 +38,10 @@ export const CreateGameModal: ModalInteraction = {
             results[player] = score
         }
 
-        const bits = Number(interaction.data.custom_id.split('-')[2])
-        const { createdAt, id, location } = await client.database.insertGame(interaction.guildId, results, notes, bits)
-        const d = dayjs(createdAt).format('YYYY-MM-DD')
-        const l = `${ location.charAt(0).toUpperCase() }${ location.slice(1).toLowerCase() }`
+        const id = Number(interaction.data.custom_id.split('-')[2])
+        const inPersonGame = await client.database.updateInPersonGame(interaction.guildId, id, results)
 
-        client.cache.guilds.get(interaction.guildId).games.insert(d, l)
-        embed.description = `Created game #${ id }!`
+        embed.description = `Update in-person game #${ inPersonGame.id }!`
         
         await interaction.updateReply({ embeds: [embed] })
     }
