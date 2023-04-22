@@ -69,9 +69,9 @@ export class Database {
         }
     }
 
-    async deleteTag(guildId: bigint, id: number): Promise<Tag> {
+    async deleteTag(guildId: bigint, keyword: string): Promise<Tag> {
         try {
-            const tag = await this.#prisma.tag.delete({ where: { guildId_id: { guildId, id } } })
+            const tag = await this.#prisma.tag.delete({ where: { guildId_keyword: { guildId, keyword } } })
 
             return tag
         } catch {
@@ -136,15 +136,29 @@ export class Database {
         return onlineGame
     }
 
-    async insertTag(guildId: bigint, keywords: string[], content: string): Promise<Tag> {
-        const { tagCount: id } = await this.#prisma.guild.update({
-            data: { tagCount: { increment: 1 } },
-            select: { tagCount: true },
-            where: { guildId }
-        })
-        const tag = await this.#prisma.tag.create({ data: { guildId, id, keywords, content } })
-
+    async insertTag(guildId: bigint, keyword: string, aliases: string[], content: string): Promise<Tag> {
+        const tag = await this.#prisma.tag.create({ data: { guildId, keyword, aliases, content }})
+        
         return tag
+    }
+
+    async isInvalidTagInput(guildId: bigint, keyword: string, aliases: string[] = [], excludeOwnKeyword = false): Promise<boolean> {
+        const combinedTagInput: string[]  = [...new Set([keyword.toLowerCase(), ...aliases.map((a: string) => a.toLowerCase())])]
+        const [{ isInvalidTagInput }] = await this.#prisma.$queryRawUnsafe<[{ isInvalidTagInput: boolean }]>(
+            `
+                SELECT
+                    BOOL_OR(ARRAY[$2] && (ARRAY[LOWER(public.tag.keyword)] || LOWER(public.tag.aliases::TEXT)::TEXT[])) AS "isInvalidTagInput"
+                FROM
+                    public.tag
+                WHERE
+                    public.tag.guild_id = $1
+                    ${ excludeOwnKeyword ? `AND public.tag.keyword != '${ keyword }'` : '' };
+            `,
+            guildId,
+            combinedTagInput        
+        )
+        
+        return isInvalidTagInput
     }
 
     async readGuild(guildId: bigint): Promise<DatabaseGuildData> {
@@ -183,9 +197,25 @@ export class Database {
         return onlineGames
     }
 
-    async readTag(guildId: bigint, id: number): Promise<Tag> {
-        const tag = await this.#prisma.tag.findUnique({ where: { guildId_id: { guildId, id } } })
-
+    async readTag(guildId: bigint, query: string): Promise<Tag> {
+        const [tag] = await this.#prisma.$queryRawUnsafe<[Tag]>(
+            `
+                SELECT
+                    *
+                FROM
+                    public.tag
+                WHERE
+                    public.tag.guild_id = $1
+                    AND (
+                        LOWER(public.tag.keyword) = $2
+                        OR $2 = ANY(LOWER(public.tag.aliases::TEXT)::TEXT[])
+                    )
+                LIMIT 1;
+            `,
+            guildId,
+            query.toLowerCase()      
+        )
+        
         return tag
     }
 
@@ -222,8 +252,8 @@ export class Database {
         return onlineGame
     }
 
-    async updateTag(guildId: bigint, id: number, keywords: string[], content: string): Promise<Tag> {
-        const tag = await this.#prisma.tag.update({ data: { keywords, content }, where: { guildId_id: { guildId, id } } })
+    async updateTag(guildId: bigint, keyword: string, data: RequireAtLeastOne<Tag, 'aliases' | 'content'>): Promise<Tag> {
+        const tag = await this.#prisma.tag.update({ data, where: { guildId_keyword: { guildId, keyword } } })
     
         return tag
     }

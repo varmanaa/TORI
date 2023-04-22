@@ -1,22 +1,19 @@
 import type { Tag } from '@prisma/client'
 
 export class TagCache {
-    #items: Map<string, number> = new Map()
+    #items: Set<string> = new Set()
 
-    entries() {
-        return this.#items.entries()
-    }
-
-    get(key: string): number | null {
-        return this.#items.get(key) ?? null
+    items() {
+        return this.#items
     }
 
     insert(tag: Tag) {
-        for (const keyword of tag.keywords)
-            this.#items.set(keyword, tag.id)  
+        for (const phrase of [tag.keyword, ...tag.aliases])
+            this.#items.add(phrase)
     }
 
-    remove(key: string) {
-        this.#items.delete(key)
+    remove(tag: Tag) {
+        for (const phrase of [tag.keyword, ...tag.aliases])
+            this.#items.delete(phrase)
     }
 }

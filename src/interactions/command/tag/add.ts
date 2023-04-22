@@ -22,11 +22,26 @@ export const TagAddCommand: CommandInteraction = {
                 {
                     components: [
                         {
-                            custom_id: 'keywords',
-                            label: 'Tag keywords',
+                            custom_id: 'keyword',
+                            label: 'Tag keyword',
                             max_length: 50,
-                            placeholder: 'Comma-separated list of tag keywords',
+                            placeholder: 'Tag keyword',
                             required: true,
+                            style: TextInputStyle.Short,
+                            type: ComponentType.TextInput,
+                            value: null
+                        }
+                    ],
+                    type: ComponentType.ActionRow
+                },
+                {
+                    components: [
+                        {
+                            custom_id: 'aliases',
+                            label: 'Tag aliases',
+                            max_length: 100,
+                            placeholder: 'Comma-separated list of tag aliases',
+                            required: false,
                             style: TextInputStyle.Short,
                             type: ComponentType.TextInput,
                             value: null
@@ -50,8 +65,8 @@ export const TagAddCommand: CommandInteraction = {
                     type: ComponentType.ActionRow
                 }
             ],
-            custom_id: 'create-tag',
-            title: 'Create tag'
+            custom_id: 'add-tag',
+            title: 'Add tag'
         }
 
         await interaction.replyWithModal(modal)

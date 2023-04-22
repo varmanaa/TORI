@@ -18,7 +18,7 @@ export const TagUpdateCommand: CommandInteraction = {
                 {
                     autocomplete: true,
                     description: 'The tag to update',
-                    name: 'keyword',
+                    name: 'query',
                     required: true,
                     type: ApplicationCommandOptionType.String
                 }
@@ -27,10 +27,8 @@ export const TagUpdateCommand: CommandInteraction = {
         }
     },
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
-        const keywordAndId = interaction.getStringOption('tag')
-        const lastHyphenIndex = keywordAndId.lastIndexOf('-')
-        const id = Number(keywordAndId.slice(lastHyphenIndex + 1))
-        const tag = await client.database.readTag(interaction.guildId, id)
+        const query = interaction.getStringOption('query')
+        const tag = await client.database.readTag(interaction.guildId, query) 
 
         if (!tag) {
             const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'No tag found.' }
@@ -42,14 +40,14 @@ export const TagUpdateCommand: CommandInteraction = {
                     {
                         components: [
                             {
-                                custom_id: 'keywords',
-                                label: 'Tag keywords',
-                                max_length: 50,
-                                placeholder: 'Comma-separated list of tag keywords',
-                                required: true,
+                                custom_id: 'aliases',
+                                label: 'Tag aliases',
+                                max_length: 100,
+                                placeholder: 'Comma-separated list of tag aliases',
+                                required: false,
                                 style: TextInputStyle.Short,
                                 type: ComponentType.TextInput,
-                                value: tag.keywords.join(',')
+                                value: tag.aliases.join(',')
                             }
                         ],
                         type: ComponentType.ActionRow
@@ -70,8 +68,8 @@ export const TagUpdateCommand: CommandInteraction = {
                         type: ComponentType.ActionRow
                     }
                 ],
-                custom_id: `update-tag-${ id }`,
-                title: 'Update tag'
+                custom_id: `update-tag-${ tag.keyword }`,
+                title: `Update "${ tag.keyword }" tag`
             }
     
             await interaction.replyWithModal(modal)

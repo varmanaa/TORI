@@ -16,7 +16,7 @@ export const TagDeleteCommand: CommandInteraction = {
                 {
                     autocomplete: true,
                     description: 'The tag to delete',
-                    name: 'keyword',
+                    name: 'query',
                     required: true,
                     type: ApplicationCommandOptionType.String
                 }
@@ -27,19 +27,14 @@ export const TagDeleteCommand: CommandInteraction = {
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
-        const keywordAndId = interaction.getStringOption('keyword')
-        const lastHyphenIndex = keywordAndId.lastIndexOf('-')
-        const id = Number(keywordAndId.slice(lastHyphenIndex + 1))
-        const tag = await client.database.deleteTag(interaction.guildId, id)
+        const keyword = interaction.getStringOption('query')
+        const tag = await client.database.deleteTag(interaction.guildId, keyword)
         const embed: Partial<APIEmbed> = { color: 0xF8F8FF }
 
         if (!tag)
             embed.description = 'No tag found.'
         else {
-            const guild = client.cache.guilds.get(interaction.guildId)
-
-            for (const keyword of tag.keywords)
-                guild.tags.remove(keyword)
+            client.cache.guilds.get(interaction.guildId).tags.remove(tag)
     
             embed.description = 'Deleted tag!'
         }

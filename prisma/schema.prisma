@@ -32,7 +32,6 @@ model Guild {
     guildId       BigInt    @id @map("guild_id")
     inPersonCount Int       @default(0) @map("in_person_count")
     onlineCount   Int       @default(0) @map("online_count")
-    tagCount      Int       @default(0) @map("tag_count")
     createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz()
     updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
 
@@ -50,7 +49,7 @@ model InPersonGame {
     playerTwoScore   Int                  @map("player_two_score")
     playerThreeScore Int                  @map("player_three_score")
     playerFourScore  Int?                 @map("player_four_score")
-    location         InPersonGameLocation 
+    location         InPersonGameLocation
     type             InPersonGameType     @default(SOUTH)
     notes            String?              @map("notes")
     date             DateTime             @default(now()) @db.Date()
@@ -74,11 +73,11 @@ model OnlineGame {
 }
 
 model Tag {
-    guildId  BigInt   @map("guild_id")
-    id       Int
-    keywords String[]
-    content  String
+    guildId BigInt @map("guild_id")
+    keyword String
+    aliases String[]
+    content String
 
-    @@id([guildId, id])
+    @@id([guildId, keyword])
     @@map("tag")
 }

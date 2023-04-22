@@ -1,2 +1,2 @@
 export * from './date.js'
-export * from './keyword.js'
+export * from './query.js'

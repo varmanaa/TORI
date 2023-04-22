@@ -16,7 +16,7 @@ export const TagShowCommand: CommandInteraction = {
                 {
                     autocomplete: true,
                     description: 'The tag to show',
-                    name: 'tag',
+                    name: 'query',
                     required: true,
                     type: ApplicationCommandOptionType.String
                 },
@@ -32,13 +32,10 @@ export const TagShowCommand: CommandInteraction = {
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
-        const keywordAndId = interaction.getStringOption('tag')
-        const lastHyphenIndex = keywordAndId.lastIndexOf('-')
-        const keyword = keywordAndId.slice(0, lastHyphenIndex)
+        const query = interaction.getStringOption('query')
         const userId = interaction.getStringOption('user')
-        const title = `*Tag suggestion (${ keyword })${ userId ? ` for <@${ userId }>` : '' }:*`
-        const id = Number(keywordAndId.slice(lastHyphenIndex + 1))
-        const tag = await client.database.readTag(interaction.guildId, id) 
+        const title = `*Tag suggestion (${ query })${ userId ? ` for <@${ userId }>` : '' }:*`
+        const tag = await client.database.readTag(interaction.guildId, query)
 
         if (!tag) {
             const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'No tag found.' }

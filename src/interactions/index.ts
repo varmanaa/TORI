@@ -3,10 +3,10 @@ import type {
     CommandInteraction,
     ModalInteraction
 } from '#types/interaction'
-import { DateAutocomplete, KeywordAutocomplete } from './autocomplete/index.js'
+import { DateAutocomplete, QueryAutocomplete } from './autocomplete/index.js'
 import { InPersonCommand, LatencyCommand, OnlineCommand, TagCommand } from './command/index.js'
 import {
-    CreateTagModal,
+    AddTagModal,
     RecordInPersonGameModal,
     UpdateInPersonGameModal,
     UpdateTagModal
@@ -14,7 +14,7 @@ import {
 
 export const autocompletes: Map<string, AutocompleteInteraction> = new Map([
     ['date', DateAutocomplete],
-    ['keyword', KeywordAutocomplete]
+    ['query', QueryAutocomplete]
 ])
 export const commands: Map<string, CommandInteraction> = new Map([
     ['in-person', InPersonCommand],
@@ -23,7 +23,7 @@ export const commands: Map<string, CommandInteraction> = new Map([
     ['tag', TagCommand]
 ])
 export const modals: Map<string, ModalInteraction> = new Map([
-    ['create-tag', CreateTagModal],
+    ['add-tag', AddTagModal],
     ['record-in-person-game', RecordInPersonGameModal],
     ['update-in-person-game', UpdateInPersonGameModal],
     ['update-tag', UpdateTagModal]
