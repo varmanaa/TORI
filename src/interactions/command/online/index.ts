@@ -22,7 +22,7 @@ export const OnlineCommand: CommandInteraction = {
     getCommand(): RESTPostAPIApplicationCommandsJSONBody {
         return {
             description: 'Manage online games',
-            name: 'game',
+            name: 'online',
             options: [
                 OnlineDeleteCommand.getCommand(),
                 OnlineListCommand.getCommand(),

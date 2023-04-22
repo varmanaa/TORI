@@ -28,8 +28,6 @@ export const OnlineUpdateCommand: CommandInteraction = {
                 },
                 {
                     description: 'The date (in "YYYY-MM-DD" format)',
-                    max_length: 8,
-                    min_length: 8,
                     name: 'date',
                     required: false,
                     type: ApplicationCommandOptionType.String
@@ -53,12 +51,23 @@ export const OnlineUpdateCommand: CommandInteraction = {
             embed.description = 'No URL or date provided.'
         else if (url && !/^https?:\/\/tenhou.net\/\d\/\?log=(?<log>.+)&.*$/g.test(url))
             embed.description = 'The provided URL is not a Tenhou URL.'
-        else if (date && !/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(date) && !dayjs(date).isValid())
+        else if (date && (!/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(date) || !dayjs(date, {}, true).isValid()))
             embed.description = 'The provided date is not a valid date.'
         else {
             await client.database.updateOnlineGame(interaction.guildId, id, { date, url })
 
             embed.description = `Updated online game #${ id }!`
+        }
+
+        if (date) {
+            const guildGames = client.cache.guilds.get(interaction.guildId).games
+            const oldDate = dayjs(onlineGame.date).format('YYYY-MM-DD')
+            const count = await client.database.countOnlineGames(interaction.guildId, oldDate)
+    
+            if (count === 0n)
+                guildGames.remove(oldDate, 'ONLINE')
+    
+            guildGames.insert(date, 'ONLINE')
         }
         
         await interaction.updateReply({ embeds: [embed] })

@@ -37,7 +37,7 @@ export const OnlineDeleteCommand: CommandInteraction = {
             const date = dayjs(onlineGame.date).format('YYYY-MM-DD')
             const count = await client.database.countOnlineGames(interaction.guildId, date)
 
-            if (!count)
+            if (count === 0n)
                 client.cache.guilds.get(interaction.guildId).games.remove(date, 'ONLINE')
 
             embed.description = `Deleted online game #${ id }!`

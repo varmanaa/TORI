@@ -31,11 +31,11 @@ export class Database {
         return count
     }
 
-    async countOnlineGames(guildId: bigint, date: string): Promise<number> {
-        const { count } = await this.#prisma.$queryRawUnsafe<{ count: number }>(
+    async countOnlineGames(guildId: bigint, date: string): Promise<bigint> {
+        const [{ count }] = await this.#prisma.$queryRawUnsafe<[{ count: bigint }]>(
             `
                 SELECT
-                    COUNT(*)
+                    COUNT(*) AS count
                 FROM
                     public.online_game
                 WHERE
@@ -191,8 +191,21 @@ export class Database {
         return onlineGame
     }
 
-    async readOnlineGames(guildId: bigint, date: string): Promise<OnlineGame[]> {
-        const onlineGames = await this.#prisma.onlineGame.findMany({ where: { guildId, date } })
+    async readOnlineGamesByDate(guildId: bigint, date: string): Promise<{ id: number, url: string }[]> {
+        const onlineGames = await this.#prisma.$queryRawUnsafe<{ id: number, url: string }[]>(
+            `
+                SELECT
+                    id,
+                    url
+                FROM
+                    public.online_game
+                WHERE
+                    public.online_game.guild_id = $1
+                    AND public.online_game.date = $2::DATE
+            `,
+            guildId,
+            date
+        )
 
         return onlineGames
     }
@@ -246,10 +259,26 @@ export class Database {
         return inPersonGame
     }
 
-    async updateOnlineGame(guildId: bigint, id: number, data: RequireAtLeastOne<OnlineGame, 'date' | 'url'>): Promise<OnlineGame> {
-        const onlineGame = await this.#prisma.onlineGame.update({ data, where: { guildId_id: { guildId, id } } })
-    
-        return onlineGame
+    async updateOnlineGame(guildId: bigint, id: number, data: RequireAtLeastOne<OnlineGame, 'date' | 'url'>): Promise<void> {
+        const updates: string[] = []
+
+        if (data?.date)
+            updates.push(`date = '${ data.date }'::DATE`)
+        if (data?.url)
+            updates.push(`url = '${ data.url }'`)
+
+        await this.#prisma.$queryRawUnsafe(
+            `
+                UPDATE public.online_game
+                SET
+                    ${ updates.join(',') }
+                WHERE
+                    public.online_game.guild_id = $1
+                    AND public.online_game.id = $2;
+            `,
+            guildId,
+            id
+        )
     }
 
     async updateTag(guildId: bigint, keyword: string, data: RequireAtLeastOne<Tag, 'aliases' | 'content'>): Promise<Tag> {

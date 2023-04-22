@@ -28,7 +28,7 @@ export const OnlineListCommand: CommandInteraction = {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
         const date = interaction.getStringOption('date')
-        const onlineGames = await client.database.readOnlineGames(interaction.guildId, date)
+        const onlineGames = await client.database.readOnlineGamesByDate(interaction.guildId, date)
         const embeds: Partial<APIEmbed>[] = onlineGames?.length
             ? Array
                 .from({ length: Math.ceil(onlineGames.length / 5) }, (_, i) => onlineGames.slice(5 * i, 5 * (i + 1)))
