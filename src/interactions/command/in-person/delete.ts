@@ -6,8 +6,8 @@ import {
     type APIEmbed,
     ApplicationCommandOptionType,
     MessageFlags
- } from '@discordjs/core'
- import dayjs from 'dayjs'
+} from '@discordjs/core'
+import dayjs from 'dayjs'
 
 export const InPersonDeleteCommand: CommandInteraction = {
     getCommand(): APIApplicationCommandOption {
@@ -38,7 +38,7 @@ export const InPersonDeleteCommand: CommandInteraction = {
             const date = dayjs(inPersonGame.date).format('YYYY-MM-DD')
             const count = await client.database.countInPersonGames(interaction.guildId, date, inPersonGame.location)
 
-            if (!count)
+            if (count === 0n)
                 client.cache.guilds.get(interaction.guildId).games.remove(date, inPersonGame.location as GameLocation)
 
             embed.description = `Deleted in-person game #${ id }!`

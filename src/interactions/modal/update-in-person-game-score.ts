@@ -2,12 +2,17 @@ import type { ModalSubmitInteraction, ToriClient } from '#structs'
 import type { ModalInteraction } from '#types/interaction'
 import { type APIEmbed, MessageFlags } from '@discordjs/core'
 
-export const UpdateInPersonGameModal: ModalInteraction = {
+export const UpdateInPersonGameScoreModal: ModalInteraction = {
     async handle(interaction: ModalSubmitInteraction, client: ToriClient): Promise<void> {
         await interaction.defer({ flags: MessageFlags.Ephemeral })
 
         const embed: Partial<APIEmbed> = { color: 0xF8F8FF }
-        const results: Record<string, number> = {}
+        const results = {} as {
+            'playerOneId': number,
+            'playerTwoId': number,
+            'playerThreeId': number,
+            'playerFourId': number
+        }
 
         let totalScore = 0
 
@@ -35,10 +40,10 @@ export const UpdateInPersonGameModal: ModalInteraction = {
                 return  
             }
 
-            results[player] = score
+            results[player as 'playerOneId' | 'playerTwoId' | 'playerThreeId' | 'playerFourId'] = score
         }
 
-        const id = Number(interaction.data.custom_id.split('-')[2])
+        const id = Number(interaction.data.custom_id.split('-').at(-1))
         const inPersonGame = await client.database.updateInPersonGame(interaction.guildId, id, results)
 
         embed.description = `Update in-person game #${ inPersonGame.id }!`

@@ -1,4 +1,9 @@
-import type { DatabaseGuildData, RequireAtLeastOne } from '#types/database'
+import type {
+    DatabaseGuildData,
+    InPersonGameUpdate,
+    PartialInPersonGame,
+    RequireAtLeastOne
+} from '#types/database'
 import {
     type InPersonGame,
     type InPersonGameLocation,
@@ -11,17 +16,17 @@ import {
 export class Database {
     #prisma = new PrismaClient()
 
-    async countInPersonGames(guildId: bigint, date: string, location: InPersonGameLocation): Promise<number> {
-        const { count } = await this.#prisma.$queryRawUnsafe<{ count: number }>(
+    async countInPersonGames(guildId: bigint, date: string, location: InPersonGameLocation): Promise<bigint> {
+        const [{ count }] = await this.#prisma.$queryRawUnsafe<[{ count: bigint }]>(
             `
                 SELECT
-                    COUNT(*)
+                    COUNT(*) AS count
                 FROM
-                    public.in_person
+                    public.in_person_game
                 WHERE
-                    public.online_game.guild_id = $1
-                    AND public.online_game.date = $2::DATE
-                    AND public.online_game.location = $3'::"GameLocation"
+                    public.in_person_game.guild_id = $1
+                    AND public.in_person_game.date = $2::DATE
+                    AND public.in_person_game.location = $3::"InPersonGameLocation"
             `,
             guildId,
             date,
@@ -179,8 +184,31 @@ export class Database {
         return inPersonGame
     }
 
-    async readInPersonGames(guildId: bigint, date: string, location: InPersonGameLocation): Promise<InPersonGame[]> {
-        const inPersonGames = await this.#prisma.inPersonGame.findMany({ where: { guildId, date, location } })
+    async readPartialInPersonGamesByDateAndLocation(guildId: bigint, date: string, location: InPersonGameLocation): Promise<PartialInPersonGame[]> {
+        const inPersonGames = await this.#prisma.$queryRawUnsafe<PartialInPersonGame[]>(
+            `
+                SELECT
+                    public.in_person_game.id AS id,
+                    public.in_person_game.player_one_id AS "playerOneId",
+                    public.in_person_game.player_two_id AS "playerTwoId",
+                    public.in_person_game.player_three_id AS "playerThreeId",
+                    public.in_person_game.player_four_id AS "playerFourId",
+                    public.in_person_game.player_one_score AS "playerOneScore",
+                    public.in_person_game.player_two_score AS "playerTwoScore",
+                    public.in_person_game.player_three_score AS "playerThreeScore",
+                    public.in_person_game.player_four_score AS "playerFourScore",
+                    public.in_person_game.notes
+                FROM
+                    public.in_person_game
+                WHERE
+                    public.in_person_game.guild_id = $1
+                    AND public.in_person_game.date = $2::DATE
+                    AND public.in_person_game.location = $3::"InPersonGameLocation";
+            `,
+            guildId,
+            date,
+            location
+        )
 
         return inPersonGames
     }
@@ -232,16 +260,51 @@ export class Database {
         return tag
     }
 
-    async updateInPersonGame(guildId: bigint, id: number, data: { date: string } | Record<string, number>): Promise<InPersonGame> {
-        let inPersonGame: InPersonGame
-        
+    async updateInPersonGame(guildId: bigint, id: number, data: InPersonGameUpdate): Promise<PartialInPersonGame> {
+        let inPersonGame: PartialInPersonGame
+
         if ('date' in data)
-            inPersonGame = await this.#prisma.inPersonGame.update({ data, where: { guildId_id: { guildId, id } } })
+            inPersonGame = await this.#prisma.$queryRawUnsafe<PartialInPersonGame>(
+                `
+                    UPDATE public.in_person_game
+                    SET
+                        date = $3::DATE
+                    WHERE
+                        public.in_person_game.guild_id = $1
+                        AND public.in_person_game.id = $2
+                    RETURNING
+                        id,
+                        player_one_id AS "playerOneId",
+                        player_two_id AS "playerTwoId",
+                        player_three_id AS "playerThreeId",
+                        player_four_id AS "playerFourId",
+                        player_one_score AS "playerOneScore",
+                        player_two_score AS "playerTwoScore",
+                        player_three_score AS "playerThreeScore",
+                        player_four_score AS "playerFourScore",
+                        notes;
+                `,
+                guildId,
+                id,
+                data.date
+            )
         else {
             const players = Object.keys(data)
             const scores = Object.values(data)
 
             inPersonGame = await this.#prisma.inPersonGame.update({
+                select: {
+                    id: true,
+                    playerOneId: true,
+                    playerTwoId: true,
+                    playerThreeId: true,
+                    playerFourId: true,
+                    playerOneScore: true,
+                    playerTwoScore: true,
+                    playerThreeScore: true,
+                    playerFourScore: true,
+                    notes: true
+                },
                 data: {
                     playerOneId: players[0],
                     playerTwoId: players[1],

@@ -1,9 +1,24 @@
-import type { InPersonGameLocation, Tag } from '@prisma/client'
+import type {
+    InPersonGame,
+    InPersonGameLocation,
+    Tag
+} from '@prisma/client'
 
 export type DatabaseGuildData = {
     inPersonGames: { date: Date, location: InPersonGameLocation }[],
     onlineGames: { date: Date }[],
     tags: Tag[]
+}
+
+export type PartialInPersonGame = Omit<InPersonGame, 'guildId' | 'location' | 'type' | 'date' | 'createdAt' | 'updatedAt'>
+
+export type InPersonGameUpdate = {
+    date: string
+} | {
+    playerOneId: number,
+    playerTwoId: number,
+    playerThreeId: number,
+    playerFourId: number
 }
 
 // ref - https://github.com/sindresorhus/type-fest/blob/main/source/require-at-least-one.d.ts

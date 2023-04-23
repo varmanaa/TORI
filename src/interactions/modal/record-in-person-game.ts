@@ -42,7 +42,7 @@ export const RecordInPersonGameModal: ModalInteraction = {
             results[player] = score
         }
 
-        const bits = Number(interaction.data.custom_id.split('-')[2])
+        const bits = Number(interaction.data.custom_id.split('-').at(-1))
 
         let location: InPersonGameLocation
         let type: InPersonGameType

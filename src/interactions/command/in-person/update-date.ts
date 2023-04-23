@@ -22,8 +22,6 @@ export const InPersonUpdateDateCommand: CommandInteraction = {
                 },
                 {
                     description: 'The date (in "YYYY-MM-DD" format)',
-                    max_length: 8,
-                    min_length: 8,
                     name: 'date',
                     required: true,
                     type: ApplicationCommandOptionType.String
@@ -42,10 +40,19 @@ export const InPersonUpdateDateCommand: CommandInteraction = {
 
         if (!inPersonGame) 
             embed.description = 'No in-person game found.'
-        else if (!/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(date) && !dayjs(date).isValid())
+        else if (!/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(date) || !dayjs(date, {}, true).isValid())
             embed.description = 'The provided date is not a valid date.'
         else {
             await client.database.updateInPersonGame(interaction.guildId, id, { date })
+
+            const guildGames = client.cache.guilds.get(interaction.guildId).games
+            const oldDate = dayjs(inPersonGame.date).format('YYYY-MM-DD')
+            const count = await client.database.countInPersonGames(interaction.guildId, oldDate, inPersonGame.location)
+
+            if (count === 0n)
+                guildGames.remove(oldDate, inPersonGame.location)
+
+            guildGames.insert(date, inPersonGame.location)
 
             embed.description = `Updated in-person game #${ id }!`
         }

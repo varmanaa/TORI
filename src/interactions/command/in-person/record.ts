@@ -8,7 +8,6 @@ import {
     type APITextInputComponent,
     ApplicationCommandOptionType,
     ComponentType,
-    MessageFlags,
     TextInputStyle
 } from '@discordjs/core'
 import { InPersonGameLocation, InPersonGameType } from '@prisma/client'
@@ -74,8 +73,6 @@ export const InPersonRecordCommand: CommandInteraction = {
         }
     },
     async run(interaction: ApplicationCommandInteraction): Promise<void> {
-        await interaction.defer({ flags: MessageFlags.Ephemeral })
-
         const players: Record<string, string> = {}
 
         for (const name of ['player-one', 'player-two', 'player-three', 'player-four']) {

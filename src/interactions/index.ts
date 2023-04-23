@@ -8,7 +8,7 @@ import { InPersonCommand, LatencyCommand, OnlineCommand, TagCommand } from './co
 import {
     AddTagModal,
     RecordInPersonGameModal,
-    UpdateInPersonGameModal,
+    UpdateInPersonGameScoreModal,
     UpdateTagModal
 } from './modal/index.js'
 
@@ -25,6 +25,6 @@ export const commands: Map<string, CommandInteraction> = new Map([
 export const modals: Map<string, ModalInteraction> = new Map([
     ['add-tag', AddTagModal],
     ['record-in-person-game', RecordInPersonGameModal],
-    ['update-in-person-game', UpdateInPersonGameModal],
+    ['update-in-person-game-score', UpdateInPersonGameScoreModal],
     ['update-tag', UpdateTagModal]
 ])

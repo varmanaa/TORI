@@ -8,7 +8,6 @@ import {
     type APITextInputComponent,
     ApplicationCommandOptionType,
     ComponentType,
-    MessageFlags,
     TextInputStyle
 } from '@discordjs/core'
 
@@ -29,15 +28,13 @@ export const InPersonUpdateScoreCommand: CommandInteraction = {
         }
     },
     async run(interaction: ApplicationCommandInteraction, client: ToriClient): Promise<void> {
-        await interaction.defer({ flags: MessageFlags.Ephemeral })
-
         const id = interaction.getNumberOption('id')
         const inPersonGame = await client.database.readInPersonGame(interaction.guildId, id)
 
         if (!inPersonGame) {
             const embed: Partial<APIEmbed> = { color: 0xF8F8FF, description: 'No game found.' }
 
-            await interaction.updateReply({ embeds: [embed] })
+            await interaction.reply({ embeds: [embed] })
             return
         }
 
@@ -80,7 +77,7 @@ export const InPersonUpdateScoreCommand: CommandInteraction = {
 
         const modal: APIModalInteractionResponseCallbackData = {
             components: playerComponents,
-            custom_id: `update-in-person-game-${ id }`,
+            custom_id: `update-in-person-game-score-${ id }`,
             title: 'Update game'
         }
 
