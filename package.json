@@ -39,5 +39,6 @@
         "start:dev": "node -r dotenv/config dist/index.js",
         "start:prod": "NODE_ENV=production node -r dotenv/config dist/index.js"
     },
-    "type": "module"
+    "type": "module",
+    "version": "1.0.0"
 }
